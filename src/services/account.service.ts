@@ -8,13 +8,14 @@ import {
   DeleteAccountDto,
 } from 'src/dtos/account.dto';
 import { HelperService } from 'src/utils/hash.util';
-//import { office_code, user_role } from '@prisma/client'; // Import the enum from Prisma
+import { AuthService } from 'src/services/auth.service'; // Import AuthService
 
 @Injectable()
 export class AccountService {
   constructor(
     private prisma: PrismaService,
     private helperService: HelperService,
+    private authService: AuthService,
   ) {}
 
   async login(loginDto: LoginDto) {
@@ -25,15 +26,15 @@ export class AccountService {
       user &&
       (await this.helperService.comparePassword(password, user.password))
     ) {
-      const userWithStringId = {
-        ...user,
-        accountid: user.accountid.toString(), // Convert BigInt to String
-      };
+      const token = await this.authService.generateJwtToken(
+        email,
+        user.accountid.toString(),
+      );
 
       return {
         status: 200,
         message: 'Login successful',
-        user: userWithStringId,
+        token,
       };
     } else {
       return { status: 401, message: 'Email/Password is not correct' };
@@ -104,22 +105,53 @@ export class AccountService {
 
   async showAccount(showAccountDto: ShowAccountDto) {
     const { accountid } = showAccountDto;
-    const account = await this.prisma.account.findUnique({
-      where: { accountid: BigInt(accountid) }, // Convert to BigInt if necessary
-    });
-    if (account) {
-      return { status: 200, message: 'Account found', account };
-    } else {
-      return { status: 404, message: 'Account not found' };
+
+    if (!accountid) {
+      return { status: 400, message: 'Account ID is required' };
+    }
+
+    try {
+      // Convert accountid from string to BigInt
+      const bigIntId = BigInt(accountid);
+
+      const account = await this.prisma.account.findUnique({
+        where: { accountid: bigIntId },
+      });
+
+      if (account) {
+        return {
+          status: 200,
+          message: 'Account found',
+          account: {
+            ...account,
+            accountid: account.accountid.toString(), // Convert BigInt to string for response
+          },
+        };
+      } else {
+        return { status: 404, message: 'Account not found' };
+      }
+    } catch (error) {
+      return {
+        status: 500,
+        message: 'Internal server error',
+        error: error.message,
+      };
     }
   }
 
   async showAllAccounts() {
     const accounts = await this.prisma.account.findMany();
+
+    // Convert BigInt fields to strings
+    const serializedAccounts = accounts.map((account) => ({
+      ...account,
+      accountid: account.accountid.toString(), // Convert BigInt to string
+    }));
+
     return {
       status: 200,
       message: 'Accounts retrieved successfully',
-      accounts,
+      accounts: serializedAccounts,
     };
   }
 
@@ -135,5 +167,11 @@ export class AccountService {
     } else {
       return { status: 401, message: 'Invalid email or password' };
     }
+  }
+
+  async logout(): Promise<{ status: number; message: string }> {
+    console.log('User logged out');
+
+    return { status: 200, message: 'Logout successful' };
   }
 }

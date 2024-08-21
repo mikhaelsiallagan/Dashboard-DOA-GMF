@@ -28,7 +28,7 @@ CREATE TYPE "reg_based" AS ENUM ('DGCA', 'EASA');
 -- CreateEnum
 CREATE TYPE "responoffice" AS ENUM ('AO: Airworthiness Office', 'DO: Design Office', 'IM: Independent Monitoring', 'PR: Partner', 'SC: Subcontractor', 'BR: BRIN', 'GF: GMF AeroAsia', 'BA: BIFA Flying School', 'EL: Elang Lintas Indonesia');
 
--- CreateEnum
+-- CreateEnumy
 CREATE TYPE "uic" AS ENUM ('Chief Design Office', 'Chief Airworthiness Office', 'Chief Independent Monitoring', 'Head of DOA');
 
 -- CreateEnum

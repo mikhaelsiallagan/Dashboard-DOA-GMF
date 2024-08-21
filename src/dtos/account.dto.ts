@@ -63,7 +63,7 @@ export class UpdatePasswordDto {
 // DTO for showing an account
 export class ShowAccountDto {
   @IsNumber()
-  accountid: bigint;
+  accountid: string;
 }
 
 // DTO for deleting an account
